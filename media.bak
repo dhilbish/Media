@@ -1,0 +1,348 @@
+#
+#	Networks
+#
+#
+#	Indexer
+#
+version: '3'
+services:
+ Nzbhydra:
+    image: linuxserver/hydra2
+    container_name: Nzbhydra
+    restart: always
+    hostname: hydra2
+    environment:
+      - PGID=1001
+      - PUID=1001
+      - TZ=America/Chicago
+    volumes:
+      - ~/Docker/NZBHydra/config:/config
+      - ~/Docker/NZBHydra/downloads:/downloads
+    ports:
+      - "5076:5076"
+ Jackett:
+    image: linuxserver/jackett
+    container_name: Jackett
+    restart: always
+    hostname: jackett
+    environment:
+      - PGID=1000
+      - PUID=1000
+      - TZ=America/Chicago
+    volumes:
+      - ~/Docker/Jackett/config:/config
+      - ~/Docker/Jackett/config:/downloads
+    ports:
+      - "9117:9117"
+#
+#	Downloaders
+#
+ Nzbget:
+    image: linuxserver/nzbget
+    container_name: NZBget
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/Chicago
+    volumes:
+      - $DOCKER/NZBGet/config:/config
+      - $DOWNLOADS:/downloads
+    ports:
+      - 16789:6789
+    restart: unless-stopped
+ Transmission:
+    container_name: Transmission 
+    image: haugene/transmission-openvpn
+    cap_add:
+      - NET_ADMIN
+    devices:
+      - /dev/net/tun
+    restart: always
+    ports:
+      - "9091:9091"
+      - "18888:8888"
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    volumes:
+      - /Volumes/Media-1/Downloads/torrent:/data/
+      - /Volumes/Media-1/Downloads/torrent/completed:/data/completed 
+      - $DOCKER/Transmission/config:/config
+    environment:
+      - OPENVPN_PROVIDER=NEWSHOSTING
+      - OPENVPN_USERNAME=olwqrmueyw@newshosting
+      - OPENVPN_PASSWORD=PbHb;GGY5r3t0F
+      - OPENVPN_OPTS=--inactive 3600 --ping 10 --ping-exit 60
+      - LOCAL_NETWORK=192.168.0.0/24
+      - TRANSMISSION_RPC_USERNAME=trans
+      - TRANSMISSION_RPC_PASSWORD=trans
+ proxy:
+    image: haugene/transmission-openvpn-proxy
+    restart: always
+    links:
+      - Transmission
+    ports:
+      - 8080:8080
+
+ rss:
+    image: haugene/transmission-rss
+    restart: always
+    links:
+      - Transmission
+    environment:
+      - RSS_URL=http://.../xxxxx.rss
+#
+#	TV / Movies
+#
+ sonarr:
+    image: linuxserver/sonarr
+    container_name: Sonarr
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/Chicago
+#      - UMASK_SET=022 #optional
+    volumes:
+      - $DOCKER/Sonarr/config:/config
+      - $TV1:/tv1
+      - $TV2:/tv2
+      - $TV3:/tv3
+      - $TV4:/tv4
+      - $DOWNLOADS/complete/tv:/downloads
+    ports:
+      - 18989:8989
+    restart: unless-stopped
+#
+#	Books
+#
+ lazylibrarian:
+    image: linuxserver/lazylibrarian
+    container_name: LazyLibrarian
+    restart: always
+    hostname: lazylibrarian
+    environment:
+      - PGID=1000
+      - PUID=1000
+      - TZ=America/Chicago
+    volumes:
+      - $DOCKER/LazyLibrarian/config:/config
+      - /Volumes/Media-1/Downloads/complete/books:/downloads
+      - $BOOKS:/books
+      - $AUDIOBOOKS:/audiobooks
+      - $MAGAZINES:/magazines 
+      - ~/Docker/LazyLibrarian/config/db:/calibredb
+    ports:
+      - "5299:5299"
+ calibre:
+    image: linuxserver/calibre
+    container_name: Calibre
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/Chicago
+    volumes:
+      - $DOCKER/Calibre/config:/config
+      - $AUDIOBOOKS:/audiobooks
+      - $BOOKS:/books
+      - $PODCASTS:/podcasts
+    ports:
+      - 18080:8080
+      - 18081:8081
+    restart: unless-stopped
+ calibre-web:
+    image: linuxserver/calibre-web
+    container_name: Calibre-web
+    restart: always
+    hostname: calibre-web
+    environment:
+      - PGID=1000
+      - PUID=1000
+      - TZ=America/Chicago
+    volumes:
+      - $DOCKER/Calibre-web/config:/config
+      - $BOOKS:/books
+      - $DOCKER/Calibre/config/library:/db
+    ports:
+      - "8083:8083"
+#
+#	Music
+#
+ lidarr:
+    image: linuxserver/lidarr
+    container_name: Lidarr
+    restart: always
+    hostname: lidarr
+    environment:
+      - PGID=1000
+      - PUID=1000
+      - TZ=America/Chicago
+    volumes:
+      - $DOCKER/Lidarr:/config
+      - $DOCKER/lidarr/backups:/backups
+      - $DOWNLOADS/complete/music:/downloads
+      - $MUSIC3:/music3
+      - /Volumes/Media-1/Downloads/torrent:/torrent
+      - /Volumes/Media-1/Downloads/torrent-watch:/torrent-watch
+    ports:
+      - "8686:8686"
+#
+# TV & Movies
+#
+ bazarr:
+    image: linuxserver/bazarr
+    container_name: Bazarr
+    hostname: bazarr
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/Chicago
+    volumes:
+      - $DOCKER/Bazarr:/config
+      - $MOVIES1:/movies1
+      - $MOVIES2:/movies2
+      - $MOVIES3:/movies3
+      - $MOVIES4:/movies4
+      - $TV4:/tv4
+      - $TV3:/tv3
+      - $TV2:/tv2
+      - $TV1:/tv1
+    ports:
+      - "6767:6767"
+    restart: unless-stopped
+#
+# Management
+#
+ tautulli:
+    image: shiggins8/tautulli
+    container_name: Tautulli 
+    restart: always
+    hostname: tautulli
+    environment:
+      - PGID=1000
+      - PUID=1000
+      - TZ=America/Chicago
+    volumes:
+      - $DOCKER/Tautulli/config:/config
+      - $DOCKER/Tautulli:/logs
+    ports:
+      - "32769:8181"
+ #headphones:
+   # image: linuxserver/headphones
+   # container_name: Headphones 
+   # restart: always
+   # hostname: headphones
+   # environment:
+   #   - PGID=1000
+   #   - PUID=1000
+   #   - TZ=Americas/Chicago
+   # volumes:
+   #   - ~/Docker/Headphones/config:/config
+   #   - /Volumes/Media-1/Downloads/complete/music:/downloads
+   #   - /Volumes/Media-1/Music-test:/music
+   #   - /Volumes/Media/Downloads/torrent:/torrent
+   #   - /Volumes/Media/Downloads/torrent-watch:/torrent-watch
+   # ports:
+   #   - "8181:8181"
+# couchpotato:
+#    container_name: Couchpotato 
+#    image: linuxserver/couchpotato
+#    restart: always
+#    environment:
+#      - TZ=Americas/Chicago
+#      - PUID=1000
+#      - PGID=1000
+#    volumes:
+#      - ~/Docker/Couchpotato:/config
+#      - /Volumes/Media-2/Movies:/movies
+#      - /Volumes/Media/Downloads/complete/movies:/downloads
+#    ports:
+#      - "33001:5050"
+#
+#	Management
+#
+ resilio:
+    image: linuxserver/resilio-sync
+    container_name: Resilio
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Americas/Chicago
+      - UMASK_SET=022
+    volumes:
+      - $DOCKER/Resilio/config:/config
+      - /Volumes/Media-1/Resilio:/downloads
+      - /Volumes/Media-1/Resilio:/sync
+    ports:
+      - 8888:8888
+      - 55555:55555
+    restart: unless-stopped
+ Ombi:
+    image: linuxserver/ombi
+    container_name: Ombi
+    restart: always
+    hostname: ombi
+    environment:
+      - PGID=1000
+      - PUID=1000
+      - TZ=America/Chicago
+    volumes:
+      - $DOCKER/Ombi/config:/config
+    ports:
+      - "3579:3579"
+#
+#	Proxy
+#
+ NGINX:
+    image: linuxserver/letsencrypt
+    container_name: NGINX
+    restart: always
+    cap_add:
+      - NET_ADMIN
+    hostname: nginx
+    environment:
+      - PGID=1000
+      - PUID=1000
+      - TZ=America/Chicago
+      - EMAIL=dhilbish@gmail.com
+      - URL=proxy.presumenothing.net
+      - EXTRA_DOMAINS=owncloud.presumenothing.net,synology.presumenothing.net,flight.presumenothing.net,camera.presumenothing.net
+      - VALIDATION=http
+      - ONLY_SUBDOMAINS=false
+    volumes:
+      - $DOCKER/NGINX/config:/config
+    ports:
+      - "32775:80"
+      - "32776:443"
+#
+#	Docker Management
+#
+ Portainer:
+    image: portainer/portainer
+    container_name: Portainer
+    command: -H unix:///var/run/docker.sock
+    restart: always
+    hostname: portainer 
+    ports:
+      - 9000:9000 
+    environment: 
+      - CAP_HOST_MANAGEMENT=1
+      - TZ=America/Chicago
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - $DOCKER/Portainer/data:/data
+ Watchtower:
+    container_name: Watchtower
+    restart: always
+    image: v2tec/watchtower
+    environment:
+      - TZ=America/Chicago
+      - WATCHTOWER_NOTIFICATIONS=slack
+      - WATCHTOWER_NOTIFICATION_SLACK_HOOK_URL=https://hooks.slack.com/services/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
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: --schedule "0 0 4 * * *" --cleanup
+# volumes:
+#        portainer_data:
+#
+#	Transmission	
+#
