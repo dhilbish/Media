@@ -341,7 +341,7 @@ services:
     environment:
       - TZ=America/Chicago
       - WATCHTOWER_NOTIFICATIONS=slack
-      - WATCHTOWER_NOTIFICATION_SLACK_HOOK_URL=https://hooks.slack.com/services/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
+      - WATCHTOWER_NOTIFICATION_SLACK_HOOK_URL=https://hooks.slack.com/services/XXX
       - WATCHTOWER_NOTIFICATION_SLACK_ICON_URL=https://drive.google.com/file/d/1V_CHzg2Kr6YYhDuIMY7UUnllxQkTKWqq/view?usp=sharing
       - WATCHTOWER_NOTIFICATION_SLACK_IDENTIFIER=Server
     volumes:
