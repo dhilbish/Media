@@ -1,0 +1,63 @@
+#
+# Docker / VPN
+#
+HOME=/home/dhilbish
+DOCKER=/home/dhilbish/Docker
+VPNPROVIDER=PIA
+VPNUSERNAME=x3558518
+VPNPASSWORD=aCg47nmgJv
+#
+# Downloads
+#
+DOWNLOADS=/mnt/Downloads
+TORRENT=/mnt/Torrent
+NZB=/mnt/Downloads/nzb
+#
+# Books
+#
+AUDIOBOOKS=/mnt/Media-1/Audiobooks
+BOOKS=/mnt/Media-1/Books
+MAGAZINES=/mnt/Media-1/Magazines
+PODCASTS=/mnt/Media-1/Podcasts
+#
+# Learning
+#
+LEARNING=/mnt/Media-1/Learning
+#
+# Movies
+#
+MOVIES1=/mnt/Media-1/Movies-1
+MOVIES2=/mnt/Media-2/Movies-2
+MOVIES3=/mnt/Media-3/Movies-3
+MOVIES4=/mnt/Media-4/Movies-4
+MOVIES5=/mnt/Media-5/Movies-5
+MOVIES6=/mnt/Media-6/Movies-6
+SPANISHMOVIES5=/mnt/Media-5/Spanish-Movies-5
+#
+# TV
+#
+TV1=/mnt/Media-1/TV-Shows-1
+TV2=/mnt/Media-2/TV-Shows-2
+TV3=/mnt/Media-3/TV-Shows-3
+TV4=/mnt/Media-4/TV-Shows-4
+TV5=/mnt/Media-5/TV-Shows-5
+TV6=/mnt/Media-6/TV-Shows-6
+#
+# Music
+#
+MUSIC1=/mnt/Media-1/Music-1
+MUSIC2=/mnt/Media-2/Music-2
+MUSIC3=/mnt/Media-3/Music-3
+MUSIC4=/mnt/Media-4/Music-4
+MUSIC5=/mnt/Media-5/Music-5
+MUSIC6=/mnt/Media-6/Music-6
+#
+#	Mounted Drives
+#
+VOLUME1=/mnt/Media-1
+VOLUME2=/mnt/Media-2
+VOLUME3=/mnt/Media-3
+VOLUME4=/mnt/Media-4
+VOLUME5=/mnt/Media-5
+VOLUME6=/mnt/Media-6
+
