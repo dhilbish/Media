@@ -4,23 +4,25 @@
 #
 #	Indexer
 #
-version: '3'
+version: '3.2'
+
 services:
- Nzbhydra:
+
+  Nzbhydra:
     image: linuxserver/hydra2
     container_name: Nzbhydra
     restart: always
     hostname: hydra2
     environment:
-      - PGID=1001
-      - PUID=1001
+      - PGID=1000
+      - PUID=1000
       - TZ=America/Chicago
     volumes:
-      - ~/Docker/NZBHydra/config:/config
-      - ~/Docker/NZBHydra/downloads:/downloads
+      - $DOCKER/NZBHydra/config:/config
+      - $DOCKER/NZBHydra/downloads:/downloads
     ports:
-      - "5076:5076"
- Jackett:
+      - 5076:5076
+  Jackett:
     image: linuxserver/jackett
     container_name: Jackett
     restart: always
@@ -30,14 +32,47 @@ services:
       - PUID=1000
       - TZ=America/Chicago
     volumes:
-      - ~/Docker/Jackett/config:/config
-      - ~/Docker/Jackett/config:/downloads
+      - $DOCKER/Jackett/config:/config
+      - $TORRENT/torrent-watch:/watch
     ports:
-      - "9117:9117"
+      - 9117:9117
 #
 #	Downloaders
 #
- Nzbget:
+  Deluge:
+    image: binhex/arch-delugevpn
+    container_name: Deluge
+    restart: always
+    cap_add:
+      - NET_ADMIN
+    ports:
+      - 8112:8112 
+      - 8118:8118
+      - 58846:58846
+      - 58946:58946
+    volumes:
+      - $TORRENT:/data
+      - $DOCKER/Deluge/config:/config
+    environment:
+      - VPN_ENABLED=yes
+      - VPN_USER=x3558518
+      - VPN_PASS=aCg47nmgJv
+      - VPN_PROV=pia
+      - STRICT_PORT_FORWARD=yes
+      - ENABLE_PRIVOXY=yes
+      - ENABLE_AUTODL_IRSSI=yes
+      - ENABLE_RPC2=yes
+      - ENABLE_RPC2_AUTH=yes
+      - ENABLE_WEBUI_AUTH=yes
+      - DELUGE_DAEMON_LOG_LEVEL=info
+      - DELUGE_WEB_LOG_LEVEL=info
+      - LAN_NETWORK=192.168.1.0/24
+      - NAME_SERVERS=209.222.18.222,209.222.18.218
+      - DEBUG=false
+#    -e UMASK=000
+      - PUID=1000
+      - PGID=1000
+  Nzbget:
     image: linuxserver/nzbget
     container_name: NZBget
     restart: unless-stopped
@@ -47,76 +82,100 @@ services:
       - TZ=America/Chicago
     volumes:
       - $DOCKER/NZBGet/config:/config
-      - $DOWNLOADS:/downloads
+      - $DOCKER/NZBGet:/docker
+      - $NZB:/downloads
     ports:
-      - 16789:6789
- Transmission:
-    container_name: Transmission 
-    image: haugene/transmission-openvpn
-    cap_add:
-      - NET_ADMIN
-    devices:
-      - /dev/net/tun
-    restart: always
-    ports:
-      - "9091:9091"
-      - "18888:8888"
-    dns:
-      - 8.8.8.8
-      - 8.8.4.4
-    volumes:
-      - /Volumes/Media-1/Downloads/torrent:/data/
-      - /Volumes/Media-1/Downloads/torrent/completed:/data/completed 
-      - $DOCKER/Transmission/config:/config
-    environment:
-      - OPENVPN_PROVIDER=NEWSHOSTING
-      - OPENVPN_USERNAME=olwqrmueyw@newshosting
-      - OPENVPN_PASSWORD=PbHb;GGY5r3t0F
-      - OPENVPN_OPTS=--inactive 3600 --ping 10 --ping-exit 60
-      - LOCAL_NETWORK=192.168.0.0/24
-      - TRANSMISSION_RPC_USERNAME=trans
-      - TRANSMISSION_RPC_PASSWORD=trans
- proxy:
-    image: haugene/transmission-openvpn-proxy
-    restart: always
-    links:
-      - Transmission
-    ports:
-      - 8080:8080
-
- rss:
-    image: haugene/transmission-rss
-    restart: always
-    links:
-      - Transmission
-    environment:
-      - RSS_URL=http://.../xxxxx.rss
+      - 6789:6789
+#  Rutorrent:
+#    image: binhex/arch-rtorrentvpn
+#    container_name: Rutorrent
+#    restart: always
+#    cap_add:
+#      - NET_ADMIN
+#    ports:
+#      - 9080:9080
+#      - 9443:9443
+#      - 8118:8118
+#    volumes:
+#      - $TORRENT:/data
+#      - $DOCKER/Rutorrent/config:/config
+#    environment:
+#      - TZ=America/Chicago
+#     - VPN_ENABLED=yes
+#     - VPN_USER=x3558518
+#     - VPN_PASS=aCg47nmgJv
+#     - VPN_PROV=pia
+#     - STRICT_PORT_FORWARD=yes
+#     - ENABLE_PRIVOXY=yes
+#     - ENABLE_AUTODL_IRSSI=yes
+#     - ENABLE_RPC2=yes
+#     - ENABLE_RPC2_AUTH=yes
+#     - ENABLE_WEBUI_AUTH=yes
+#     - RPC2_USER=admin
+#     - RPC2_PASS=rutorrent
+#     - WEBUI_USER=admin
+#     - WEBUI_PASS=rutorrent
+#     - LAN_NETWORK=192.168.1.0/24
+#     - NAME_SERVERS=8.8.8.8,209.222.18.222,84.200.69.80,37.235.1.174,1.1.1.1,209.222.18.218,37.235.1.177,84.200.70.40,1.0.0.1
+#     - DEBUG=false
+#     - PHP_TZ=America/Chicago
+#     - UMASK=000
+#     - PUID=1000
+#     - PGID=1000
 #
 #	TV / Movies
 #
- sonarr:
-    image: linuxserver/sonarr
+  sonarr:
+    image: linuxserver/sonarr:preview
     container_name: Sonarr
     environment:
       - PUID=1000
       - PGID=1000
-      - TZ=America/Chicago
-#      - UMASK_SET=022 #optional
+      - TZ=Americas/Chicago
+    depends_on:
+      - Nzbhydra
+      - Jackett
+      - Nzbget
     volumes:
       - $DOCKER/Sonarr/config:/config
       - $TV1:/tv1
       - $TV2:/tv2
       - $TV3:/tv3
       - $TV4:/tv4
-      - $DOWNLOADS/complete/tv:/downloads
+      - $TV5:/tv5
+      - $TV6:/tv6
+      - $NZB:/downloads
+      - $TORRENT:/torrent
     ports:
-      - 18989:8989
+      - 8989:8989
+    restart: unless-stopped
+#
+  radarr:
+    image: linuxserver/radarr:preview
+    container_name: Radarr 
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Americas/Chicago
+    volumes:
+      - $DOCKER/Radarr/config:/config
+      - $MOVIES1:/movies1
+      - $MOVIES2:/movies2
+      - $MOVIES3:/movies3
+      - $MOVIES4:/movies4
+      - $MOVIES5:/movies5
+      - $MOVIES6:/movies6
+      - $SPANISHMOVIES5:/spanish-movies5
+      - $NZB:/downloads
+      - $TORRENT:/torrent
+    ports:
+      - 7878:7878
     restart: unless-stopped
 #
 #	Books
 #
- lazylibrarian:
-    image: linuxserver/lazylibrarian
+  lazylibrarian:
+    image: thraxis/lazylibrarian-calibre
     container_name: LazyLibrarian
     restart: always
     hostname: lazylibrarian
@@ -126,14 +185,16 @@ services:
       - TZ=America/Chicago
     volumes:
       - $DOCKER/LazyLibrarian/config:/config
-      - /Volumes/Media-1/Downloads/complete/books:/downloads
+      - $NZB/complete/books:/downloads
+      - $TORRENT:/torrent
       - $BOOKS:/books
       - $AUDIOBOOKS:/audiobooks
       - $MAGAZINES:/magazines 
-      - ~/Docker/LazyLibrarian/config/db:/calibredb
+      - $DOCKER/LazyLibrarian/config/db:/calibredb
+      - $NZB/complete/books/import:/import
     ports:
-      - "5299:5299"
- calibre:
+      - 5299:5299
+  calibre:
     image: linuxserver/calibre
     container_name: Calibre
     restart: unless-stopped
@@ -142,15 +203,18 @@ services:
       - PGID=1000
       - TZ=America/Chicago
     volumes:
-      - $DOCKER/Calibre/config:/config
+      - $BOOKS/config:/config
+      - $DOWNLOADS:/alldownloads
       - $AUDIOBOOKS:/audiobooks
       - $BOOKS:/books
       - $PODCASTS:/podcasts
-      - /Volumes/Media-1/Downloads/complete/books:/downloads
+      - $MAGAZINES:/magazines
+      - $NZB/nzb/complete/books:/downloads
+      - $TORRENT:/torrent
     ports:
       - 18080:8080
       - 18081:8081
- calibre-web:
+  calibre-web:
     image: linuxserver/calibre-web
     container_name: Calibre-web
     restart: always
@@ -162,13 +226,28 @@ services:
     volumes:
       - $DOCKER/Calibre-web/config:/config
       - $BOOKS:/books
-      - $DOCKER/Calibre/config/library:/db
+      - $BOOKS/:/db
     ports:
       - "8083:8083"
+  Booksonic:
+    image: linuxserver/booksonic
+    container_name: Booksonic
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/Chicago
+      - CONTEXT_PATH=/booksonic
+    volumes:
+      - $DOCKER/Booksonic/config:/config
+      - $AUDIOBOOKS:/audiobooks
+      - $PODCASTS:/podcasts
+    ports:
+      - 4040:4040
+    restart: unless-stopped
 #
 #	Music
 #
- lidarr:
+  lidarr:
     image: linuxserver/lidarr
     container_name: Lidarr
     restart: always
@@ -179,17 +258,17 @@ services:
       - TZ=America/Chicago
     volumes:
       - $DOCKER/Lidarr:/config
-      - $DOCKER/lidarr/backups:/backups
-      - $DOWNLOADS/complete/music:/downloads
+      - $DOCKER/Lidarr/backups:/backups
+      - $NZB:/downloads
       - $MUSIC3:/music3
-      - /Volumes/Media-1/Resilio/lidarr:/torrent
-      - /Volumes/Media-1/Downloads/torrent-watch:/torrent-watch
+      - $TORRENT:/torrent
+      - $TORRENT/torrent-watch:/torrent-watch
     ports:
       - "8686:8686"
 #
 # TV & Movies
 #
- bazarr:
+  bazarr:
     image: linuxserver/bazarr
     container_name: Bazarr
     hostname: bazarr
@@ -204,6 +283,10 @@ services:
       - $MOVIES2:/movies2
       - $MOVIES3:/movies3
       - $MOVIES4:/movies4
+      - $MOVIES5:/movies5
+      - $MOVIES6:/movies6
+      - $TV6:/tv6
+      - $TV5:/tv5
       - $TV4:/tv4
       - $TV3:/tv3
       - $TV2:/tv2
@@ -213,7 +296,7 @@ services:
 #
 # Management
 #
- tautulli:
+  tautulli:
     image: shiggins8/tautulli
     container_name: Tautulli 
     restart: always
@@ -226,58 +309,34 @@ services:
       - $DOCKER/Tautulli/config:/config
       - $DOCKER/Tautulli:/logs
     ports:
-      - "32769:8181"
- #headphones:
-   # image: linuxserver/headphones
-   # container_name: Headphones 
-   # restart: always
-   # hostname: headphones
-   # environment:
-   #   - PGID=1000
-   #   - PUID=1000
-   #   - TZ=Americas/Chicago
-   # volumes:
-   #   - ~/Docker/Headphones/config:/config
-   #   - /Volumes/Media-1/Downloads/complete/music:/downloads
-   #   - /Volumes/Media-1/Music-test:/music
-   #   - /Volumes/Media/Downloads/torrent:/torrent
-   #   - /Volumes/Media/Downloads/torrent-watch:/torrent-watch
-   # ports:
-   #   - "8181:8181"
-# couchpotato:
-#    container_name: Couchpotato 
-#    image: linuxserver/couchpotato
-#    restart: always
-#    environment:
-#      - TZ=Americas/Chicago
-#      - PUID=1000
-#      - PGID=1000
-#    volumes:
-#      - ~/Docker/Couchpotato:/config
-#      - /Volumes/Media-2/Movies:/movies
-#      - /Volumes/Media/Downloads/complete/movies:/downloads
-#    ports:
-#      - "33001:5050"
+      - 32769:8181
 #
-#	Management
+#	Backup
 #
- resilio:
+  resilio:
     image: linuxserver/resilio-sync
     container_name: Resilio
     restart: always
     environment:
       - PUID=1000
-      - PGID=1000
-      - TZ=Americas/Chicago
+      - PGID=998
+      - TZ=America/Chicago
       - UMASK_SET=022
     volumes:
       - $DOCKER/Resilio/config:/config
-      - /Volumes/Media-1/Resilio:/downloads
-      - /Volumes/Media-1/Resilio:/sync
+      - /:/sync
+      - $DOWNLOADS:/downloads
+      - $VOLUME1:/volume1
+      - $VOLUME2:/volume2
+      - $VOLUME3:/volume3
+      - $VOLUME4:/volume4
+      - $VOLUME5:/volume5
+      - $VOLUME6:/volume6
+#      - $DOCKER/Reslio/config/sysctl.conf:/etc2/sysctl.conf:ro
     ports:
       - 8888:8888
       - 55555:55555
- Ombi:
+  Ombi:
     image: linuxserver/ombi
     container_name: Ombi
     restart: always
@@ -293,7 +352,7 @@ services:
 #
 #	Proxy
 #
- NGINX:
+  NGINX:
     image: linuxserver/letsencrypt
     container_name: NGINX
     restart: always
@@ -306,19 +365,38 @@ services:
       - TZ=America/Chicago
       - EMAIL=dhilbish@gmail.com
       - URL=proxy.presumenothing.net
-      - EXTRA_DOMAINS=owncloud.presumenothing.net,synology.presumenothing.net,flight.presumenothing.net,camera.presumenothing.net,resilio.presumenothing.net,request.presumenothing.net
+      - EXTRA_DOMAINS=synclounge.presumenothing.net,kiwix.presumenothing.net,resilio-s.presumenothing.net,resilio.presumenothing.net,nextcloud.presumenothing.net,synology.presumenothing.net,flight.presumenothing.net,camera.presumenothing.net,books.presumenothing.net,request.presumenothing.net,plex.presumenothing.com,plex.presumenothing.net
       - VALIDATION=http
       - ONLY_SUBDOMAINS=false
     volumes:
       - $DOCKER/NGINX/config:/config
     ports:
-      - "32775:80"
-      - "32776:443"
+      - 32775:80
+      - 32776:443
+#
+#	Wikipedia
+#
+  Kiwix:
+    image: kiwix/kiwix-serve
+    container_name: Kiwix
+    command : '/data/*.zim'
+    restart: always
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Americas/Chicago
+      - LIBRARY_PATH=/data
+      - ZIM_PATH=$VOLUME1/Wiki
+    volumes:
+      - $DOCKER/Kiwix/config:/config
+      - $VOLUME1/Wiki:/data
+    ports:
+      - 7080:80
 #
 #	Docker Management
 #
- Portainer:
-    image: portainer/portainer
+  Portainer:
+    image: portainer/portainer-ce
     container_name: Portainer
     command: -H unix:///var/run/docker.sock
     restart: always
@@ -333,28 +411,31 @@ services:
       - AGENT_SECRET=mysecrettoken
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-      - $DOCKER/Portainer/data:/data
- Watchtower:
+      - $DOCKER/Portainer/data-2:/data
+  Watchtower:
     container_name: Watchtower
     restart: always
     image: v2tec/watchtower
     environment:
+      - PGID=1000
+      - PUID=1000
       - TZ=America/Chicago
       - WATCHTOWER_NOTIFICATIONS=slack
-      - WATCHTOWER_NOTIFICATION_SLACK_HOOK_URL=https://hooks.slack.com/services/XXX
+      - WATCHTOWER_NOTIFICATION_SLACK_HOOK_URL=https://hooks.slack.com/services/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
       - WATCHTOWER_NOTIFICATION_SLACK_ICON_URL=https://drive.google.com/file/d/1V_CHzg2Kr6YYhDuIMY7UUnllxQkTKWqq/view?usp=sharing
-      - WATCHTOWER_NOTIFICATION_SLACK_IDENTIFIER=Server
+      - WATCHTOWER_NOTIFICATION_SLACK_IDENTIFIER=NUC
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
-    command: --schedule "0 0 4 * * *" --cleanup
- Netdata:
+    command: --schedule "0 0 2 * * *" --cleanup
+  Netdata:
     image: netdata/netdata
     container_name: Netdata
     restart: always
     hostname: presumenothing.net # set to fqdn of host
     environment:
-      - PGID=1000
+#      - PGID=1000
       - PUID=1000
+      - PGID=998
       - TZ=America/Chicago
     ports:
       - 19999:19999
@@ -366,8 +447,138 @@ services:
       - /proc:/host/proc:ro
       - /sys:/host/sys:ro
       - /var/run/docker.sock:/var/run/docker.sock:ro
-# volumes:
-#        portainer_data:
+  Plex-LDAP:
+    image: starbix/plex-ldap
+    container_name: LDAP_for_Plex
+    restart: always
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=America/Chicago
+      - TOKEN=rzzvV6fw4NKb94-p9yZW
+      - MACHINEID=47423e492d52101a2c6db41d2eaebebc8e79dbd9
+      - SERVERNAME=PresumeNothing
+    ports:
+      - 2389:2389
+  Monitorr:
+    container_name: Monitorr
+    image: monitorr/monitorr
+    restart: always
+    environment:
+      - TZ=Americas/Chicago
+      - PUID=1000
+      - PGID=1000
+    volumes:
+      - $DOCKER/Monitorr:/app
+      - $DOWNLOADS:/downloads
+      - $VOLUME1:/volume1
+      - $VOLUME2:/volume2
+      - $VOLUME3:/volume3
+      - $VOLUME4:/volume4
+      - $VOLUME5:/volume5
+      - $VOLUME6:/volume6
+    ports:
+      - 32009:80
+  Firefox:
+    image: jlesage/firefox
+    container_name: Firefox 
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Americas/Chicago
+    volumes:
+      - $DOCKER/Firefox/config:/config
+        #  - /dev/shm:/dev/shm
+    ports:
+      - 5800:5800
+      - 25900:5900
+    restart: unless-stopped
+    shm_size: "2gb"
+    privileged: true
+  Guacamole:
+    image: oznu/guacamole
+    container_name: Guacamole
+    restart: always
+    volumes:
+      - $DOCKER/Guacamole/config:/config
+    ports:
+      - 19080:8080
+  Dozzle:
+    container_name: Dozzle
+    image: amir20/dozzle:latest
+    restart: always
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Americas/Chicago
+      - DOZZLE_BASE=/dozzle
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - 12890:8080
+  Logarr:
+    container_name: Logarr
+    image: monitorr/logarr
+    restart: always
+    environment:
+      - TZ=America/Chicago
+      - PUID=1000
+      - PGID=1000
+    volumes:
+      - $DOCKER/Logarr/config:/config
+      - $DOCKER/Logarr:/var/log/logarrlogs
+      - $DOCKER/Sonarr/config/logs:/sonarr
+      - $DOCKER/Radarr/config/logs:/radarr
+      - $DOCKER/LazyLibrarian/config/log:/lazylibrarian
+      - $DOCKER/Lidarr/logs:/lidarr
+      - $DOCKER/Rutorrent/config:/rutorrent
+      - $DOCKER/Jackett/config/Jackett:/jackett
+      - $DOCKER/NZBHydra/config/logs:/nzbhydra
+    ports:
+      - "32007:80"
+#        
+# Remote Desktop       
+#        
+  rdesktop:
+    image: linuxserver/rdesktop
+    container_name: RDesktop
+    privileged: true #optional
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Americas/Chicago
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - $DOCKER/RDesktop/config:/config
+      - $HOME:/home
+    ports:
+      - 3389:3389
+    shm_size: "1gb"
+    restart: unless-stopped
 #
-#	Transmission	
+# Storage
 #
+  Nextcloud:
+      container_name: Nextcloud
+      image: nextcloud
+      restart: always
+      environment:
+        - TZ=Americas/Chicago
+        - PUID=1000
+        - PGID=1000
+      volumes:
+        - $DOCKER/Nextcloud/app:/var/www/html
+        - $DOCKER/Nextcloud/config:/var/www/html/config
+        - $DOCKER/Nextcloud/custom_apps:/var/www/html/custom_apps
+        - $DOCKER/Nextcloud/data:/var/www/html/data
+        - $DOCKER/Nextcloud/themes:/var/www/html/themes
+        - /etc/localtime:/etc/localtime:ro
+        - $VOLUME1:/volume1
+        - $VOLUME2:/volume2
+        - $VOLUME3:/volume3
+        - $VOLUME4:/volume4
+        - $VOLUME5:/volume5
+        - $VOLUME6:/volume6
+      ports:
+        - "32011:80"
+        - "32015:443"
