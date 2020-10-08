@@ -1,0 +1,28 @@
+# /etc/fstab: static file system information.
+#
+# Use 'blkid' to print the universally unique identifier for a
+# device; this may be used with UUID= as a more robust way to name devices
+# that works even if disks are added and removed. See fstab(5).
+#
+# <file system> <mount point>   <type>  <options>       <dump>  <pass>
+# / was on /dev/nvme0n1p2 during curtin installation
+/dev/disk/by-uuid/67d2ed86-57e1-43c0-8ca1-4f5573f28c29 / ext4 defaults 0 0
+# /boot/efi was on /dev/nvme0n1p1 during curtin installation
+/dev/disk/by-uuid/3538-9F2E /boot/efi vfat defaults 0 0
+/swap.img	none	swap	sw	0	0
+#
+#  Local Drives
+#
+UUID=0c9518ce-d540-49ab-9359-d949559938c8	/mnt/Media-1	ext4	defaults 0 0
+#UUID=f660f594-a11b-493e-a6b4-d5d1ef6d8202	/mnt/Media-2	ext4	defaults 0 0
+UUID=936413be-6a9d-45cb-9e67-8469183bfc0b	/mnt/Media-2	ext4	defaults 0 0
+UUID=a67be4c5-dffe-4b35-bb93-2506cf7ced4c	/mnt/Media-3	ext4	defaults 0 0
+UUID=45674178-d09e-4118-9fc4-15c195f526c4	/mnt/Media-4	ext4	defaults 0 0
+UUID=8ab5852f-8d02-49c5-ab19-53c2588ec420	/mnt/Media-5	ext4	defaults 0 0
+UUID=e87e5f27-a03a-4a45-bd7d-3555df8538bf	/mnt/Media-6	ext4	defaults 0 0
+UUID=194b5f44-e7ad-429f-9467-3e65c91327f3	/mnt/S-Media-3	ext4	defaults 0 0 
+UUID=57306471-7329-4c22-9e66-0f3b380a1d72	/mnt/Downloads 	ext4	defaults 0 0 
+UUID=7440c172-9bfc-443d-b645-1c5827386146	/mnt/S-Media-4	ext4	defaults 0 0
+UUID=1eadc10d-bb6d-4afa-8e6b-400a38fb3517	/mnt/S-Media-5	ext4	defaults 0 0
+UUID=7e13d1b8-f363-4f59-b1cd-0bac6b32d7e3	/mnt/Torrent	ext4	defaults 0 0
+/swapfile none swap sw 0 0
